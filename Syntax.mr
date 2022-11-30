@@ -1,0 +1,193 @@
+# MarkRight
+#. why? BECAUSE I WANT TO AND NO ONE CAN STOP ME!
+
+;; this is a comment
+
+What we have
+- [ ] Document generation
+- [ ] Style managing
+- [ ] Style maker script
+- [x] Heading
+- [x] Tags
+- [ ] Comments
+- [x] Style
+- [x] Separations
+- [ ] Code Blocks
+- [ ] Quotes
+- [ ] Lists
+- [ ] Task List
+- [ ] Footnotes
+- [ ] Tables
+- [x] Linking
+- [o] Linking extention
+- [ ] Data
+- [ ] Escapes and inline param
+- [ ] LaTeX
+
+
+---
+
+## #style Styling
+
+| Style | Result |
+| --- | --- |
+| `*Italic*` | *Italic* |
+| `**Bold**` | **Bold** |
+| `__Underline__` | __Underline__ |
+| `~~Strike~~` | ~~Strike~~ |
+| `^Superscript^` | ^Superscript^ |
+| `_Subscript_` | _Subscript_ |
+| `¬`Code¬`` | `Code` |
+| `==Highlight==` | ==Highlight== |
+| `=Halfbright=` | =Halfbright= |
+
+=See [tables](#tables)=
+
+
+### Code blocks
+#. READ IT because I'm going to use it everywhere!
+
+Code blocks are the best thing in my opinion.
+And making one is very very simple, trust me!
+
+We start and end a block with `¬`¬`¬̀`
+
+Such as {{s
+	```C++
+#include <iostream>
+
+int main(int argc, char** argv) {
+	std::cout << "Mark it all with MarkRight!¬:tm:\n";
+
+	return 0;
+}
+	```
+Note that you can add the name of the language you're working with,
+which will tell the parser how to lint the code you've wrote!
+}}
+One more thing, normally we'd use the `\` as an ignore character,
+but since it's a very common character in programming I have chosen to replace it
+with the `¬¬` character, it's on most extended keyboards, like the US-international, etc.
+And comes with a lot more benefit.
+
+You ʃould have a keyboard wið dead keys, such as þe US-international!
+
+### “And quotes!”
+
+I don't really know what kind of explanation you're looking for other than the syntax being `> ` and your text.
+
+> The greatest glory in living lies not in never falling, but in rising every time we fall.
+> - Nelson Mandela
+
+---
+
+## #lists Notes, Lists and stuff.
+
+#rawr-list-uwu
+1. Do you like lists? Yes. so here's the syntax
+	- this very handsome blob of ***MarkRight***:tm:```
+1. I am the first element in the list! :D
+2. And me the second~ uwu
+	``` shall render to the following: {{
+1. I am the first element in the list! :D
+2. And me the second~ uwu
+	}} =See [preview](#preview)=
+	- Also, you're actually in an unordered list, so basically no numbers.
+	Syntax is pretty straight forward, just do ```- Something handsome~```
+2. Perhaps you want a list but, well you have a lot of stuff and can't really keep track of every
+list index, so, well, we also have some very handsome things for you~
+	\? ol.increment.set('#', str(..i, 16))
+	1. With that you should be fine keeping track of you 100+ entries, although.
+	1. #first but perhaps you want to be able to tag and link your entries to some text
+	Which is indeed very useful, [here](.#second) you will find the use of this very fancy feature.
+	\nYes it's in the document!
+3. And now footnotes[^1]! See later I don't have time!
+4.[MORE!]. #more Because I wanted, syntax ```
+1.[MORE!]. #more for what you just saw.
+```
+
+- [x] And we even have lists with checkbox!
+- [o] checkbox with stuff that's half crossed.
+- [ ] and what we don't have is note taking thingy app. Don't ask, this is just a fancy and handsome parser!
+
+
+
+[^1] Yes yes I know, I've redirected you here.
+But don't worry! I just have the [thing](#rawr-list-uwu.3) to get you back on your reading!
+
+If you wonder how I did that maybe you want to go there! =See [linking](#linking)=
+
+Oops I almost forgot to do what you just saw what I did was I just put a footnote index:
+
+```
+My text with some stuff[^a-fancy-footnote] and more handsome text!
+```
+
+And your footnote ```
+[^a-fancy-footnote]
+
+[^\] ;; this is for the end of the note
+```
+
+Footnotes have an interesting behaviour we also put a lot of efforts in,
+when your text is separated by big horizontal lines with `---`, the parser grabs all the footnotes
+in the section it's currently reading and puts it all at the end. like in this part here, we're at the end,
+if there was more they would also be here at the end, in the order they appeared in the document.
+
+If you want certain notes to figure at the end you should use [^^footnote-name]
+to redirect at the end.
+
+One more thing, if you wish to have a custom name on your footnote, use the following syntax,
+```
+Der vogel[^de-vogel:"nm"]
+
+[^de-vogel]
+==Der vogel==, *Masculine name*.
+1. The bird^name^
+[^/]
+```
+[^/]
+
+{{
+Der vogel[^de-vogel:"nm"]
+
+[^de-vogel]
+==Der vogel==, *Masculine name*.
+1. The bird^name^
+[^/]
+
+=[preview `toggle` property](#preview:toggle)=
+}}:<toggle>
+
+---
+
+## #tables Tables
+
+Oh boy, this one is big....
+
+See I had a lot of problem with tables with basic markdown and also with HTML.
+
+---
+
+## #linking Link Links Link
+
+;; TODO:
+
+
+---
+
+## #data Data and embeds
+
+---
+
+## #macro Emojis and predefined
+
+:tm:
+:twitter:
+:facebook:
+:google:
+:linkedin:
+:discord:
+:telegram:
+:youtube:
+:spotify:

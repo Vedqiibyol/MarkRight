@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&family=Roboto+Condensed&family=Roboto+Mono&family=Roboto+Serif:opsz@8..144&family=Roboto+Slab&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
+
+:root {
+	--bg-color0: #000;
+	--bg-color1: #050505;
+	--bg-color2: #222;
+
+	--fg-color0: #fff;
+	--fg-color1: #bbb;
+	--fg-color2: #777;
+}
+
+body {
+	font-family: 'Roboto', sans-serif;
+
+	background-color: var(--bg-color0);
+	color: var(--fg-color0);
+}
+
+
+h1, h2, h3, h4, h5, h6 {
+	margin-top: 18px;
+	margin-bottom: 9px;
+}
+
+hsmall {
+	font-size: 6pt;
+	opacity: 0.5;
+}
+
+
+br {
+	line-height: 20pt;
+}
+
+td, th {
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+code {
+	font-family: 'JetBrains Mono';
+	font-size: 14px;
+
+	background-color: #888A;
+	border: 0.25px solid gray;
+	border-radius: 3px;
+}
+
+half {
+	opacity: 0.5;
+}
+
+blockquote {
+	font-family: 'Roboto Serif', serif;
+
+	padding-top: 8px;
+	padding-left: 8px;
+	padding-bottom: 8px;
+	margin-left: 20px;
+
+	background-color: #BBB;
+
+	border-left: 20px solid #888;
+	border-radius: 5px;
+
+	font-style: oblique 5deg;
+}
+
+.put-left {
+	position: static;
+	width: calc(99% - 230px);
+	float: left;
+}
+
+.put-right {
+	position: static;
+	width: 230px;
+	float: right;
+}
