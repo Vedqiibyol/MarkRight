@@ -57,35 +57,28 @@ _defStyleR = []
 	'light-researchpaper',
 ]"""
 
-
-
-
 def PrintErr(*args: object, sep: str ='', end: str ='') -> None:
 	""" This function prints given text with an error, or red foreground. """
 	print(_cnRedf, *args, _cnNull, sep=sep, end=end)
-
 def PrintWarn(*args: object, sep: str ='', end: str ='') -> None:
 	""" This function prints given text with a warning, or orange foreground. """
 	print(_cnOrangef, *args, _cnNull, sep=sep, end=end)
-
 def PrintVoc(*args: object, sep: str ='', end: str ='') -> None:
 	""" This function prints given text a green foreground. """
 	print(_cnBold, _cnGreenf, *args, _cnNull, sep=sep, end=end)
-
 def PrintLite(*args: object, sep: str ='', end: str ='') -> None:
 	""" This function prints given text with a half-bright font weight. """
 	print(_cnHlfb, *args, _cnNull, sep=sep, end=end)
-
 def PrintBold(*args: object, sep: str ='', end: str ='') -> None:
 	""" This function prints given text with a bold font weight. """
 	print(_cnBold, *args, _cnNull, sep=sep, end=end)
-
 def Print(*args: object, sep: str ='', end: str ='') -> None:
 	print(*args, sep=sep, end=end)
 
 
 _reserved = " \t\n\r\"!#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
 _taskcnt  = 0
+lsbr      = 0
 
 
 _htmlDocPart1 = """<!DOCTYPE html>
@@ -205,18 +198,16 @@ def IsRL(data) -> tuple[bool, int, str]:
 
 	return [False, -1, None]
 
-
-
 def LsEnding(index, tabs=0) -> str:
 	tabh = tabs
 	tabe = tabs + 1
 
 	try:
 		return [
-			f"{_tab * tabe}</li>\n{_tab * tabh}</ul>",
-			f"{_tab * tabe}</li>\n{_tab * tabh}</ol>",
-			f"{_tab * tabe}</li>\n{_tab * tabh}</ul>",
-			f"{_tab * tabe}</li>\n{_tab * tabh}</ol>"][index]
+			f"{_tab * tabe}</li>\n{_tab * tabh}</ul>\n",
+			f"{_tab * tabe}</li>\n{_tab * tabh}</ol>\n",
+			f"{_tab * tabe}</li>\n{_tab * tabh}</ul>\n",
+			f"{_tab * tabe}</li>\n{_tab * tabh}</ol>\n"][index]
 	except IndexError:
 		return ''
 def LsStart(index, tabs, param=None) -> str:
@@ -228,11 +219,16 @@ def LsStart(index, tabs, param=None) -> str:
 			_ln + f"{_tab * tabs}<ul class='ref-list'>" + _ln][index]
 	except IndexError:
 		return ''
-
-
 # TODO: add params
 def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
 	html  = f'{_tab * (tabs+1)}</li>{_ln}'
+
+	global lsbr
+
+	if lsbr:
+		html += _tab*(tabs+1) + '<br>'*lsbr + '\n'
+		lsbr  = 0
+
 
 	if len(ls):
 		if ls[-1][1] > tabs:
@@ -291,7 +287,6 @@ def LinkAddSingle(lnk, type) -> str:
 		case 4: return f"<a href='{lnk}' class='wikilink'>{lnk}</a>"
 
 	return ''
-
 # TODO: do type 5
 def LinkAddDouble(lnk, title, type) -> str:
 	return f"<a href='{lnk}' class='md-link'>{title}</a>"
@@ -326,21 +321,28 @@ def Parse(input):
 		'q'      : False
 	}
 
-	head  = ''    # only one per line
-	lists = []    # not that if non-empty, no <br> should be added
-	newls = False # new list
-	quote = 0
-	codeb = None
-	code  = False
-	links = 0     # 0: none, 1: wikilink, 2: basic, 3: image-wikilinks, 4: preview, 5: image, 6: options
+	global lsbr
 
-	allows1 = True # allow lists, blockquotes, headings, separators to be written.
+	head     = ''    # only one per line
+	lists    = []    # not that if non-empty, no <br> should be added
+	newls    = False # new list
+	quote    = 0
+	# perhaps
+	# qlscnt   = []
+	codeb    = None
+	code     = False
+	links    = 0     # 0: none, 1: wikilink, 2: basic, 3: image-wikilinks, 4: preview, 5: image, 6: options
+
+	paragrph = 0
+	allows1  = True # allow lists, blockquotes, headings, separators to be written.
 	               # False when text is encountered
-	lnktitl = ''
-	lnktype = 0
-	detail  = 0
+	lnktitle = ''
+	lnktype  = 0
+	detail   = 0
 
 	j = 1
+
+	# TODO: fekking clean up, this is a mess!
 
 	while text:
 		data, tabs, spaces, after = StripWhiteSpaces(text)
@@ -349,19 +351,29 @@ def Parse(input):
 
 		try:
 			# * Line breaks
-			# TODO: make it with <p>
-			# TODO: clean up
+			# TODO: make it with <p> but just a tag better LOL
 			if len(data) <= 1:
-				if tabs == 0 and newls:
-					while len(lists):
-						html[-1] += LsEnding(lists.pop(-1)[0])
-				if not len(lists) and not codeb:
+				if (      paragrph and not codeb and
+					not head     and not quote and
+					not detail   and not len(lists)):
+					html[-1] += '</p>\n'
+					paragrph -= 1
+				elif not len(lists):
 					html[-1] += '<br>'
 
 			while i < len(data): # ``while len(text)``
+				# * Separations, one per line
+				# TODO: do tag closing for all
+				if not code and not codeb and data.strip() == '---':
+					html[-1] += '<hr>\t<!-- ================================================================ -->'
+					break
 
-				# later:
-				# * Inline HTML styling
+				# * black magic involving lists
+				if len(data) <= 1 and len(lists) and not codeb:
+					lsbr += 1
+				if len(lists) and tabs < lists[-1][1] and len(data) > 1:
+					for i in range(lists[-1][1] - tabs):
+						html[-1] += LsEnding(lists.pop(-1)[0])
 
 				# * Code block
 				if   data[i:i+3] == '```':
@@ -377,13 +389,25 @@ def Parse(input):
 					else:
 						codeb    = None
 						allows1  = False
-						html[-1] += "</textarea> <!-- end of codeblock -->"
+						html[-1] += "</textarea> <!-- end of codeblock --> <br>"
 					i += 3
 				elif data[i:i+2] == '``':
 					code     ^= 1
 					html[-1] += '<' + ('/'*(not code)) + 'code>'
 					i        += 2
 					allows1   = False
+
+				# ! Should blockquotes really be paragraph inhibiter?
+				# * Blockquotes
+				if not code and not codeb:
+					if   data[i:][:2] == '<<':
+						html[-1] += '<blockquote>\n'
+						i        += 2
+						quote    += 1
+					elif data[i:][:2] == '>>' and quote:
+						quote    -= 1
+						html[-1] += '\n</blockquote>\n'
+						i        += 2
 
 				# * Ref-lists
 				if not code and not codeb and allows1:
@@ -408,6 +432,60 @@ def Parse(input):
 						detail   -= 1
 						html[-1] += '</details>'
 						i        += 2
+
+				# * Lists, on new index per line
+				# TODO: lists parameters
+				if not code and not codeb and allows1:
+					f  = False # first
+					ol = IsOL(data[i:])
+					ul = IsUL(data[i:])
+					tl = IsTL(data[i:])
+
+					if   tl != -1:
+						html[-1] += LsAddHeader(lists, 2, tabs, tl)
+						newls = True
+						i    += 5
+					elif ul:
+						html[-1] += LsAddHeader(lists, 0, tabs)
+						newls = True
+						i    += 1
+					elif ol[0]:
+						html[-1] += LsAddHeader(lists, 1, tabs, ol[2])
+						newls = True
+						i    += ol[1]
+
+				# * Heading, one per line
+				if not code and not codeb and allows1:
+					if data[i] == '#' and data[i+1] in ' \t\r.#':
+						head = data[i:].split(' ', 1)[0]
+
+						if   head == '#.':     head = 'hsmall'; i += 3
+						elif head == '#':      head = 'h1';     i += 2
+						elif head == '##':     head = 'h2';     i += 3
+						elif head == '###':    head = 'h3';     i += 4
+						elif head == '####':   head = 'h4';     i += 5
+						elif head == '#####':  head = 'h5';     i += 6
+						elif head == '######': head = 'h6';     i += 7
+						else: head = ''
+
+						if head:
+							html[-1] += f'<{head}>'
+
+						allows1 = False
+
+
+
+				# * Paragraphs
+				if  (len(data) > 1 and
+					not paragrph and not codeb and
+					not head     and not quote and
+					not detail   and not len(lists)):
+					html[-1] += '\n<p>'
+					allows1   = False
+					paragrph += 1
+
+				# later:
+				# * Inline HTML styling
 
 				# * Content
 				# TODO: work images for width/length, etc
@@ -449,66 +527,15 @@ def Parse(input):
 
 					if links == 2 and data[i] == ']':
 						links = 6
-						lnktitl = html.pop(-1)
+						lnktitle = html.pop(-1)
 						i += 1
 
 					if links == 6 and data[i] == '(':
 						src       = data[i+1:data.find(')')]
 						links     = 0
 						i        += 1 + len(src) + 1
-						html[-1] += LinkAddDouble(src, lnktitl, lnktype)
+						html[-1] += LinkAddDouble(src, lnktitle, lnktype)
 
-				# * Blockquotes
-				if not code and not codeb:
-					if   data[i:][:2] == '<<':
-						quote    += 1
-						html[-1] += '<blockquote>\n'
-						i        += 2
-					elif data[i:][:2] == '>>' and quote:
-						quote    -= 1
-						html[-1] += '\n</blockquote>\n'
-						i        += 2
-
-				# * Lists, on new index per line
-				# TODO: lists parameters
-				if not code and not codeb and allows1:
-					f  = False # first
-					ol = IsOL(data[i:])
-					ul = IsUL(data[i:])
-					tl = IsTL(data[i:])
-
-					if   tl != -1:
-						html[-1] += LsAddHeader(lists, 2, tabs, tl)
-						newls = True
-						i    += 5
-					elif ul:
-						html[-1] += LsAddHeader(lists, 0, tabs)
-						newls = True
-						i    += 1
-					elif ol[0]:
-						html[-1] += LsAddHeader(lists, 1, tabs, ol[2])
-						newls = True
-						i    += ol[1]
-
-
-				# * Heading, one per line
-				if not code and not codeb and allows1:
-					if data[i] == '#' and data[i+1] in ' \t\r.#':
-						head = data[i:].split(' ', 1)[0]
-
-						if   head == '#.':     head = 'hsmall'; i += 3
-						elif head == '#':      head = 'h1';     i += 2
-						elif head == '##':     head = 'h2';     i += 3
-						elif head == '###':    head = 'h3';     i += 4
-						elif head == '####':   head = 'h4';     i += 5
-						elif head == '#####':  head = 'h5';     i += 6
-						elif head == '######': head = 'h6';     i += 7
-						else: head = ''
-
-						if head:
-							html[-1] += f'<{head}>'
-
-						allows1 = False
 
 				# * Tags
 				if not code and not codeb:
@@ -541,12 +568,6 @@ def Parse(input):
 
 					allows1 = False
 
-				# * Separations, one per line
-				# TODO: do tag closing for all
-				if not code and not codeb and data.strip() == '---':
-					html[-1] += '<hr>\t<!-- ================================================================ -->'
-					break
-
 				# * Miscellaneous ('--', '...')
 				if not code and not codeb:
 					if data[i:i+2] == '--':
@@ -562,9 +583,6 @@ def Parse(input):
 				# * Footnotes
 				# * Basic tables
 
-
-
-
 				if data[i] != '\n':
 					html[-1] += data[i]
 				if data[i] not in _reserved:
@@ -572,7 +590,7 @@ def Parse(input):
 				i += 1
 
 		except IndexError:
-			print(f"{_cnBlue}Error on line {j}{_cnNull}")
+			print(f"{_cnBlueB}Error on line {j}{_cnNull}")
 			pass
 
 		if head:
@@ -690,7 +708,8 @@ def main(args):
 			match args[i][1:]:
 				case 'h':
 					# OpenHelp()
-					PrintErr('Sorry the help is not implemented yet! D:')
+					PrintMan()
+					return 1
 				case 'o':
 					if isSetOutput:
 						PrintErr("You have already given an output!")
@@ -740,14 +759,24 @@ def main(args):
 						i += 1
 					else:
 						PrintErr("MarkRight requires one more arguments after '-sb'\n")
-				case 'cs': # custom style
+				case 'ds': # custom style
 					if hasleft:
 						info['stylesheet'].append(FindStyleSheet(args[i+1], True))
 						i += 1
 					else:
 						PrintErr("MarkRight requires one more arguments after '-cs'\n")
-				case 'csb': # custom style bundle
+				case 'dsb': # custom style bundle
 					pass
+				case 'lds':
+					if len(_defStyleR):
+						PrintBold(f"Default styles:\n\t")
+						for i, n in enumerate(_defStyleR):
+							Print(n, '\t', '\n\t' if (i%3) else '')
+						print()
+					else:
+						PrintErr("Did not found any default styles, please update are report to issue!")
+					return 1
+				# case 'lf': pass
 
 				case _: PrintErr(f"Unknown argument `{args[i]}`\n")
 		else:
@@ -758,8 +787,8 @@ def main(args):
 	PrintInfo(info)
 
 	# * Just some performance stuff
-	from time import time
-	start = time()
+	from time import time_ns
+	start = time_ns()
 
 	htmlStylesL = ''
 	htmlStylesB = ''
@@ -775,12 +804,31 @@ def main(args):
 	o.write(html)
 
 	Print('Program finished in ')
-	PrintVoc(time() - start)
-	Print(' seconds.', end='\n')
+	PrintVoc(time_ns() - start)
+	Print(' nano-seconds.', end='\n')
 
 
 	return 0
 
+def PrintMan():
+	print(f"""{_cnBold}MarkRight
+
+Usage:
+	{_cnHlfb}${_cnNull+_cnBold} python main-2022-11-23.py <str> [option] (<str|int>)
+
+Commands:{_cnNull}
+	{_cnBold}-h{_cnNull}	Print this help.
+	{_cnBold}-o   {_cnHlfb}…{_cnNull}	Give an output file.
+	{_cnBold}-f   {_cnHlfb}…{_cnNull}	Give an output format.
+	{_cnBold}-s   {_cnHlfb}…{_cnNull}	Give stylesheets.
+	{_cnBold}-sb  {_cnHlfb}…{_cnNull}	Bundles stylesheet inside the output HTML.
+	{_cnBold}-ds  {_cnHlfb}…{_cnNull}	Custom style sheet.
+	{_cnBold}-dsb {_cnHlfb}…{_cnNull}	Bundle default stylesheet inside the output HTML.
+	{_cnBold}-lds{_cnNull}	List all default styles.
+
+For more information please read Syntax.mr:
+{_cnBold}{_cnHlfb}${_cnNull+_cnBold} python main-2022-11-23.py Syntax.mr -o Syntax.html{_cnNull}""")
+	# {_cnBold}-lf{_cnNull}	List all formats
 
 
 if __name__ == "__main__":
@@ -788,7 +836,7 @@ if __name__ == "__main__":
 	for i in os.listdir('./stylesheets/'):
 		if os.path.isfile(i) and i.endswith('.css') and len(i) > 4:
 			_defStyleR.append(i[:-4])
-	print(_defStyleR)
+	# print(_defStyleR)
 
 	from sys import argv
 	main(argv)

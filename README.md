@@ -10,11 +10,11 @@ python main-2022-11-23.py README.md -o README.html
 ```
 
 - [-] Implementation
-	- [ ] Paragraphs
+	- [x] Paragraphs
 	- [ ] Code blocks
 	- [x] style
 	- [x] heading
-	- [ ] a help manual
+	- [x] a help manual
 	- [-] document
 		- [x] gen
 		- [-] style

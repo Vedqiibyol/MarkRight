@@ -42,9 +42,9 @@ td, th {
 code {
 	font-family: 'JetBrains Mono';
 	font-size: 14px;
+	color: var(--fg-color0);
 
-	background-color: #888A;
-	border: 0.25px solid gray;
+	background-color: #444A;
 	border-radius: 3px;
 }
 
@@ -60,9 +60,9 @@ blockquote {
 	padding-bottom: 8px;
 	margin-left: 20px;
 
-	background-color: #BBB;
+	background-color: #222A;
 
-	border-left: 20px solid #888;
+	border-left: 20px solid #000A;
 	border-radius: 5px;
 
 	font-style: oblique 5deg;
