@@ -6,7 +6,7 @@ Here are the following tasks ahead, and ToDos.
 
 I very much suggest you use MarkRight to read this document:
 ```sh
-python main-2022-11-23.py README.md -o README.html
+python main.py README.md -o README.html
 ```
 
 - [-] Implementation
