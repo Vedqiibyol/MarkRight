@@ -223,9 +223,8 @@ def LsStart(index, tabs, param=None) -> str:
 def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
 	html  = f'{_tab * (tabs+1)}</li>{_ln}'
 
-	global lsbr
-
 	if lsbr:
+		global lsbr
 		html += _tab*(tabs+1) + '<br>'*lsbr + '\n'
 		lsbr  = 0
 
@@ -294,7 +293,7 @@ def LinkAddDouble(lnk, title, type) -> str:
 def Parse(input):
 	file = open(input)
 	text = file.readline()
-	html = ['']
+	html = ''
 
 	# * Increment
 	# You know what this is, so just don't touch it.
@@ -337,6 +336,7 @@ def Parse(input):
 	allows1  = True # allow lists, blockquotes, headings, separators to be written.
 	               # False when text is encountered
 	lnktitle = ''
+	lnkttpos = None
 	lnktype  = 0
 	detail   = 0
 
@@ -350,30 +350,30 @@ def Parse(input):
 		i  = 0
 
 		try:
-			# * Line breaks
-			# TODO: make it with <p> but just a tag better LOL
+			# * Line breaks and paragraphs
 			if len(data) <= 1:
 				if (      paragrph and not codeb and
 					not head     and not quote and
 					not detail   and not len(lists)):
-					html[-1] += '</p>\n'
+					html += '</p>\n'
 					paragrph -= 1
 				elif not len(lists):
-					html[-1] += '<br>'
+					html += '<br>'
+			if len(lists) and tabs < lists[-1][1] and len(data) > 1:
+				if not (IsUL(data) or IsOL(data)[0] or IsTL(data) != -1 or IsRL(data)[0]):
+					for _ in range(lists[-1][1] - tabs+1):
+						html += LsEnding(lists.pop(-1)[0])
 
 			while i < len(data): # ``while len(text)``
 				# * Separations, one per line
 				# TODO: do tag closing for all
 				if not code and not codeb and data.strip() == '---':
-					html[-1] += '<hr>\t<!-- ================================================================ -->'
+					html += '<hr>\t<!-- ================================================================ -->'
 					break
 
 				# * black magic involving lists
 				if len(data) <= 1 and len(lists) and not codeb:
 					lsbr += 1
-				if len(lists) and tabs < lists[-1][1] and len(data) > 1:
-					for i in range(lists[-1][1] - tabs):
-						html[-1] += LsEnding(lists.pop(-1)[0])
 
 				# * Code block
 				if   data[i:i+3] == '```':
@@ -383,17 +383,17 @@ def Parse(input):
 							codeb = 'txt'
 
 						# TODO: TinyMCE
-						html[-1] += f"<textarea class='codeblock' data-lang='{codeb}'>\n"
+						html += f"<textarea class='codeblock' data-lang='{codeb}'>\n"
 
 						allows1 = False
 					else:
 						codeb    = None
 						allows1  = False
-						html[-1] += "</textarea> <!-- end of codeblock --> <br>"
+						html += "</textarea> <!-- end of codeblock --> <br>"
 					i += 3
 				elif data[i:i+2] == '``':
 					code     ^= 1
-					html[-1] += '<' + ('/'*(not code)) + 'code>'
+					html += '<' + ('/'*(not code)) + 'code>'
 					i        += 2
 					allows1   = False
 
@@ -401,12 +401,12 @@ def Parse(input):
 				# * Blockquotes
 				if not code and not codeb:
 					if   data[i:][:2] == '<<':
-						html[-1] += '<blockquote>\n'
+						html += '<blockquote>\n'
 						i        += 2
 						quote    += 1
 					elif data[i:][:2] == '>>' and quote:
 						quote    -= 1
-						html[-1] += '\n</blockquote>\n'
+						html += '\n</blockquote>\n'
 						i        += 2
 
 				# * Ref-lists
@@ -414,7 +414,7 @@ def Parse(input):
 					# .{1}
 					rl = IsRL(data[i:])
 					if rl[0]:
-						html[-1] += LsAddHeader(lists, 3, tabs, rl[2])
+						html += LsAddHeader(lists, 3, tabs, rl[2])
 						newls = True
 						i += rl[1]
 
@@ -422,15 +422,15 @@ def Parse(input):
 				if not code and not codeb:
 					if data[i:i+2] == '((':
 						detail   += 1
-						html[-1] += '<details>'
+						html += '<details>'
 						i        += 2
 						summary   = data[i+1:]
 						if summary:
-							html[-1] += f'<summary>{summary}</summary>'
+							html += f'<summary>{summary}</summary>'
 							i        += len(summary)
 					if detail and data[i:i+2] == '))':
 						detail   -= 1
-						html[-1] += '</details>'
+						html += '</details>'
 						i        += 2
 
 				# * Lists, on new index per line
@@ -442,15 +442,15 @@ def Parse(input):
 					tl = IsTL(data[i:])
 
 					if   tl != -1:
-						html[-1] += LsAddHeader(lists, 2, tabs, tl)
+						html += LsAddHeader(lists, 2, tabs, tl)
 						newls = True
 						i    += 5
 					elif ul:
-						html[-1] += LsAddHeader(lists, 0, tabs)
+						html += LsAddHeader(lists, 0, tabs)
 						newls = True
 						i    += 1
 					elif ol[0]:
-						html[-1] += LsAddHeader(lists, 1, tabs, ol[2])
+						html += LsAddHeader(lists, 1, tabs, ol[2])
 						newls = True
 						i    += ol[1]
 
@@ -469,7 +469,7 @@ def Parse(input):
 						else: head = ''
 
 						if head:
-							html[-1] += f'<{head}>'
+							html += f'<{head}>'
 
 						allows1 = False
 
@@ -480,7 +480,7 @@ def Parse(input):
 					not paragrph and not codeb and
 					not head     and not quote and
 					not detail   and not len(lists)):
-					html[-1] += '\n<p>'
+					html += '\n<p>'
 					allows1   = False
 					paragrph += 1
 
@@ -493,11 +493,6 @@ def Parse(input):
 				# TODO: perhaps `Parse` needs to be redone to accept single
 				# TODO: strings in order to parse extracted strings from `[]`
 				if not code and not codeb:
-					# 1. Detect the start
-					# 1. Set the flags
-					# 1. Find the end
-					# 1. And do more things!
-					# --
 					# 1. Managing the style inside.
 					# --
 					# \ **value**
@@ -511,59 +506,65 @@ def Parse(input):
 					# [7]: next-arg, second flag
 					if links == 0 and data[i:i+3] == '![[':
 						src       = data[i+3:data.find(']]')]
-						html[-1] += LinkAddSingle(src, 3)
+						html += LinkAddSingle(src, 3)
 						i        += len(src) + 5
 					if links == 0 and data[i:i+3] == '?[[':
 						src       = data[i+3:data.find(']]')]
-						html[-1] += LinkAddSingle(src, 4)
+						html += LinkAddSingle(src, 4)
 						i        += len(src) + 5
 					if links == 0 and data[i:i+2] == '[[':
 						src       = data[i+2:data.find(']]')]
-						html[-1] += LinkAddSingle(src, 1)
+						html += LinkAddSingle(src, 1)
 						i        += len(src) + 4
 
-					if links == 0 and data[i] == '[': links = 2; html.append(''); i += 1; lnktype = 2
-					if links == 0 and data[i:i+1] == '![': links = 2; html.append(''); i += 1; lnktype = 5
+					if links == 0 and data[i] == '[' and lnkttpos == None:
+						links    = 2
+						lnktype  = 2
+						lnkttpos = len(html)
+						i       += 1
+					if links == 0 and data[i:i+2] == '![' and lnkttpos == None:
+						links    = 2
+						lnktype  = 5
+						lnkttpos = len(html)
+						i       += 1
 
-					if links == 2 and data[i] == ']':
-						links = 6
-						lnktitle = html.pop(-1)
-						i += 1
-
-					if links == 6 and data[i] == '(':
+					if links == 2 and data[i:i+2] == '](' and lnkttpos != None:
+						links     = 6
+						lnktitle  = html[lnkttpos:]
+						html      = html[:lnkttpos]
+						lnkttpos  = None
 						src       = data[i+1:data.find(')')]
 						links     = 0
 						i        += 1 + len(src) + 1
-						html[-1] += LinkAddDouble(src, lnktitle, lnktype)
+						html += LinkAddDouble(src, lnktitle, lnktype)
 
 
 				# * Tags
-				if not code and not codeb:
+				if not code and not codeb and data[i] == '#':
 					# (data[i+1] == ',' or not data[i+1] in _reserved)
-					if data[i] == '#' and data[i+1] not in _reserved:
-						tag = GetValid(data[i+1:])
-						ret = ('#' + tag) if data[i+1] != ',' else ''
+					tag = GetValid(data[i+1:])
+					ret = ('#' + tag) if data[i+1] != ',' else ''
 
-						if data[i+1] == ',':
-							ret == ''
+					if data[i+1] == ',':
+						ret == ''
 
-						html[-1] += f"<span id='{tag}'>{ret}</span>"
+					html += f"<span id='{tag}'>{ret}</span>"
 
-						i += len(ret)
-						allows1 = False
+					i += len(ret)
+					allows1 = False
 
 				# * Styles
 				if not code and not codeb and data[i] in "`~^*_='":
-					if   data[i:i+2] == '**':  html[-1] += AddStyle('strong', styles); i += 2; continue
-					elif data[i:i+2] == '==':  html[-1] += AddStyle('mark',   styles); i += 2; continue
-					elif data[i:i+2] == '__':  html[-1] += AddStyle('ins',    styles); i += 2; continue
-					elif data[i:i+2] == '~~':  html[-1] += AddStyle('strike', styles); i += 2; continue
-					elif data[i:i+2] == "''":  html[-1] += AddStyle('q',      styles); i += 2; continue
-					elif data[i]     == '*':   html[-1] += AddStyle('em',     styles); i += 1; continue
-					elif data[i]     == '=':   html[-1] += AddStyle('half',   styles); i += 1; continue
-					elif data[i]     == '_':   html[-1] += AddStyle('sub',    styles); i += 1; continue
-					elif data[i]     == '`':   html[-1] += AddStyle('code',   styles); i += 1; continue
-					elif data[i]     == '^':   html[-1] += AddStyle('sup',    styles); i += 1; continue
+					if   data[i:i+2] == '**':  html += AddStyle('strong', styles); i += 2; continue
+					elif data[i:i+2] == '==':  html += AddStyle('mark',   styles); i += 2; continue
+					elif data[i:i+2] == '__':  html += AddStyle('ins',    styles); i += 2; continue
+					elif data[i:i+2] == '~~':  html += AddStyle('strike', styles); i += 2; continue
+					elif data[i:i+2] == "''":  html += AddStyle('q',      styles); i += 2; continue
+					elif data[i]     == '*':   html += AddStyle('em',     styles); i += 1; continue
+					elif data[i]     == '=':   html += AddStyle('half',   styles); i += 1; continue
+					elif data[i]     == '_':   html += AddStyle('sub',    styles); i += 1; continue
+					elif data[i]     == '`':   html += AddStyle('code',   styles); i += 1; continue
+					elif data[i]     == '^':   html += AddStyle('sup',    styles); i += 1; continue
 
 
 					allows1 = False
@@ -571,11 +572,11 @@ def Parse(input):
 				# * Miscellaneous ('--', '...')
 				if not code and not codeb:
 					if data[i:i+2] == '--':
-						html[-1] += '—'
+						html += '—'
 						i    += 2
 						continue
 					elif data[i:i+3] == '...':
-						html[-1] += '…'
+						html += '…'
 						i    += 3
 						continue
 
@@ -584,27 +585,27 @@ def Parse(input):
 				# * Basic tables
 
 				if data[i] != '\n':
-					html[-1] += data[i]
+					html += data[i]
 				if data[i] not in _reserved:
 					allows1 = False
 				i += 1
 
 		except IndexError:
-			print(f"{_cnBlueB}Error on line {j}{_cnNull}")
+			print(f"{_cnBlueB}Error on line {j} on position {tabs+i}{_cnNull}")
 			pass
 
 		if head:
-			html[-1] += f'</{head}>'
+			html += f'</{head}>'
 			head  = ''
 
 		allows1  = True
-		html[-1] += '\n'
+		html += '\n'
 
 		j    += 1
 		links = 0
 		text  = file.readline()
 
-	return html[0]
+	return html
 
 
 def PrintInfo(info):
