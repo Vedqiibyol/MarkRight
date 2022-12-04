@@ -14,7 +14,8 @@ to either rely on Git or Github download.
 1.	Download or clone the repo either downloading the zip file
 	in Github (Code > Local > Download ZIP), unzip and use.
 
-	Or with Git ```sh
+	Or with Git
+	```sh
 	git clone https://github.com/Vedqiibyol/MarkRight.git
 	```
 1.	Run the program with Python, see down bellow.
