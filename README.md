@@ -9,7 +9,7 @@ Installing is pretty straight forward, however, I'll later make
 an install script to install it quicker, for now you will have
 to either rely on Git or Github download.
 
-1.	You will need Python to use this software, you should also
+1.	You will need [Python](#Python) to use this software, you should also
 	install [Git](#Git) if it is not already installed on your system
 1.	Download or clone the repo either downloading the zip file
 	in Github (Code > Local > Download ZIP), unzip and use.
