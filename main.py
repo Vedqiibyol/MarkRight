@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# ! Would it be interesting to use RegEx?
+
 _tab       = '\t' # FEKKIN F-STRING RULEZ!!!
 _ln        = '\n'
 
@@ -223,8 +226,9 @@ def LsStart(index, tabs, param=None) -> str:
 def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
 	html  = f'{_tab * (tabs+1)}</li>{_ln}'
 
+	global lsbr
+
 	if lsbr:
-		global lsbr
 		html += _tab*(tabs+1) + '<br>'*lsbr + '\n'
 		lsbr  = 0
 
@@ -289,6 +293,7 @@ def LinkAddSingle(lnk, type) -> str:
 # TODO: do type 5
 def LinkAddDouble(lnk, title, type) -> str:
 	return f"<a href='{lnk}' class='md-link'>{title}</a>"
+
 
 def Parse(input):
 	file = open(input)
@@ -381,15 +386,20 @@ def Parse(input):
 						codeb = GetValid(data[i:].strip())
 						if codeb == None or not len(codeb):
 							codeb = 'txt'
+						i += len(codeb)
+						if html[-6:-2] != '</p>' or html[-6:-2] != '<br>':
+							html += '<br>'
 
-						# TODO: TinyMCE
-						html += f"<textarea class='codeblock' data-lang='{codeb}'>\n"
+						from codeparser import CodeParser
+
+						# TODO: Parser
+						html += f"<pre class='codeblock' data-lang='{codeb}'>"
 
 						allows1 = False
 					else:
 						codeb    = None
 						allows1  = False
-						html += "</textarea> <!-- end of codeblock --> <br>"
+						html += "</pre> <!-- end of codeblock --> <br>"
 					i += 3
 				elif data[i:i+2] == '``':
 					code     ^= 1
@@ -814,26 +824,27 @@ def main(args):
 def PrintMan():
 	print(f"""{_cnBold}MarkRight
 
-Usage:
-	{_cnHlfb}${_cnNull+_cnBold} python main-2022-11-23.py <str> [option] (<str|int>)
+Usage:{_cnNull}
+	{_cnHlfb}${_cnNull+_cnBold} main.py <str> [option] (<str|int>)
 
 Commands:{_cnNull}
 	{_cnBold}-h{_cnNull}	Print this help.
-	{_cnBold}-o   {_cnHlfb}…{_cnNull}	Give an output file.
-	{_cnBold}-f   {_cnHlfb}…{_cnNull}	Give an output format.
-	{_cnBold}-s   {_cnHlfb}…{_cnNull}	Give stylesheets.
-	{_cnBold}-sb  {_cnHlfb}…{_cnNull}	Bundles stylesheet inside the output HTML.
-	{_cnBold}-ds  {_cnHlfb}…{_cnNull}	Custom style sheet.
-	{_cnBold}-dsb {_cnHlfb}…{_cnNull}	Bundle default stylesheet inside the output HTML.
+	{_cnBold}-o   {_cnNull+_cnHlfb}…{_cnNull}	Give an output file.
+	{_cnBold}-f   {_cnNull+_cnHlfb}…{_cnNull}	Give an output format.
+	{_cnBold}-s   {_cnNull+_cnHlfb}…{_cnNull}	Give stylesheets.
+	{_cnBold}-sb  {_cnNull+_cnHlfb}…{_cnNull}	Bundles stylesheet inside the output HTML.
+	{_cnBold}-ds  {_cnNull+_cnHlfb}…{_cnNull}	Custom style sheet.
+	{_cnBold}-dsb {_cnNull+_cnHlfb}…{_cnNull}	Bundle default stylesheet inside the output HTML.
 	{_cnBold}-lds{_cnNull}	List all default styles.
 
 For more information please read Syntax.mr:
-{_cnBold}{_cnHlfb}${_cnNull+_cnBold} python main-2022-11-23.py Syntax.mr -o Syntax.html{_cnNull}""")
+{_cnNull+_cnHlfb}${_cnNull+_cnBold} main.py Syntax.mr -o Syntax.html{_cnNull}""")
 	# {_cnBold}-lf{_cnNull}	List all formats
 
 
 if __name__ == "__main__":
 	import os
+
 	for i in os.listdir('./stylesheets/'):
 		if os.path.isfile(i) and i.endswith('.css') and len(i) > 4:
 			_defStyleR.append(i[:-4])

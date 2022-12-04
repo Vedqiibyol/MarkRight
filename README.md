@@ -1,17 +1,41 @@
+=Version 1.2.3 - 2022-12-03=
 # Markright
 
-First public version of MarkRight
+
+
+## Install
+
+Installing is pretty straight forward, however, I'll later make
+an install script to install it quicker, for now you will have
+to either rely on Git or Github download.
+
+1.	You will need Python to use this software, you should also
+	install [Git](#Git) if it is not already installed on your system
+1.	Download or clone the repo either downloading the zip file
+	in Github (Code > Local > Download ZIP), unzip and use.
+
+	Or with Git ```sh
+	git clone https://github.com/Vedqiibyol/MarkRight.git
+	```
+1.	Run the program with Python, see down bellow.
+
+# Syntax
+
+Something I need to do, when version 2 comes out.
+
+# How to use and tasks ahead
 
 Here are the following tasks ahead, and ToDos.
 
 I very much suggest you use MarkRight to read this document:
+
 ```sh
-python main.py README.md -o README.html
+main.py README.md -o README.html
 ```
 
 - [-] Implementation
 	- [x] Paragraphs
-	- [ ] Code blocks
+	- [-] Code blocks
 	- [x] style
 	- [x] heading
 	- [x] a help manual
@@ -29,7 +53,7 @@ python main.py README.md -o README.html
 	- [ ] inline style change
 	- [ ] more scripts for stuff.
 	- [-] styles
-	- [ ] tables
+	- [ ] tables ==New Syntax? Let me know if you have an idea!==
 	- [-] content
 		- [-] basic
 		- [-] wikilink
@@ -41,7 +65,7 @@ python main.py README.md -o README.html
 		- [ ] `textura`
 		- [ ] `textura-dark`
 		- [ ] `textura-light`
-		
+
 		- [ ] `dark-serif`
 		- [ ] `dark-roboto`
 		- [ ] `dark-roman`
@@ -50,7 +74,7 @@ python main.py README.md -o README.html
 		- [ ] `light-roboto`
 		- [ ] `light-roman`
 		- [ ] `light-mono`
-		
+
 		- [ ] `dark-red-serif`
 		- [ ] `dark-blue-serif`
 		- [ ] `dark-green-serif`
@@ -58,7 +82,7 @@ python main.py README.md -o README.html
 		- [ ] `dark-magenta-serif`
 		- [ ] `dark-pink-serif`
 		- [ ] `dark-cyan-serif`
-		
+
 		- [ ] `dark-red-roman`
 		- [ ] `dark-blue-roman`
 		- [ ] `dark-green-roman`
@@ -66,7 +90,7 @@ python main.py README.md -o README.html
 		- [ ] `dark-magenta-roman`
 		- [ ] `dark-pink-roman`
 		- [ ] `dark-cyan-roman`
-		
+
 		- [ ] `dark-red-roboto`
 		- [ ] `dark-blue-roboto`
 		- [ ] `dark-green-roboto`
@@ -74,7 +98,7 @@ python main.py README.md -o README.html
 		- [ ] `dark-magenta-roboto`
 		- [ ] `dark-pink-roboto`
 		- [ ] `dark-cyan-roboto`
-		
+
 		- [ ] `dark-red-mono`
 		- [ ] `dark-blue-mono`
 		- [ ] `dark-green-mono`
@@ -82,7 +106,7 @@ python main.py README.md -o README.html
 		- [ ] `dark-magenta-mono`
 		- [ ] `dark-pink-mono`
 		- [ ] `dark-cyan-mono`
-		
+
 		- [ ] `light-red-serif`
 		- [ ] `light-blue-serif`
 		- [ ] `light-green-serif`
@@ -90,7 +114,7 @@ python main.py README.md -o README.html
 		- [ ] `light-magenta-serif`
 		- [ ] `light-pink-serif`
 		- [ ] `light-cyan-serif`
-		
+
 		- [ ] `light-red-roboto`
 		- [ ] `light-blue-roboto`
 		- [ ] `light-green-roboto`
@@ -98,7 +122,7 @@ python main.py README.md -o README.html
 		- [ ] `light-magenta-roboto`
 		- [ ] `light-pink-roboto`
 		- [ ] `light-cyan-roboto`
-		
+
 		- [ ] `light-red-roman`
 		- [ ] `light-blue-roman`
 		- [ ] `light-green-roman`
@@ -106,7 +130,7 @@ python main.py README.md -o README.html
 		- [ ] `light-magenta-roman`
 		- [ ] `light-pink-roman`
 		- [ ] `light-cyan-roman`
-		
+
 		- [ ] `light-red-mono`
 		- [ ] `light-blue-mono`
 		- [ ] `light-green-mono`
@@ -114,6 +138,20 @@ python main.py README.md -o README.html
 		- [ ] `light-magenta-mono`
 		- [ ] `light-pink-mono`
 		- [ ] `light-cyan-mono`
-		
+
 		- [ ] `dark-researchpaper`
 		- [ ] `light-researchpaper`
+
+
+
+
+- RegEx or nah?
+
+
+
+# Links
+
+[Python]: https://www.python.org/
+[Git]: https://git-scm.com/download/win
+
+
