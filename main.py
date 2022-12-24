@@ -1,8 +1,11 @@
 #!/usr/bin/python
-# ! Would it be interesting to use RegEx?
+import re
 
 _tab       = '\t' # FEKKIN F-STRING RULEZ!!!
 _ln        = '\n'
+
+_theme     = 'dark' # light | dark
+_dis`p      = 'grid' # grid  | list
 
 _cnBold    = '\x1B[1m'
 _cnHlfb    = '\x1B[2m'
@@ -31,6 +34,30 @@ _cnWhiteB  = '\x1B[47m'
 _cnOrangeB = '\x1B[48;2;221;114;0m'
 
 _defStyleR = []
+
+reHead         = re.compile(r'(\#{1,6}|\#\.)\s+')
+reTag          = re.compile(r'\#(,?)(?P<tag>\w+)')
+reUL           = re.compile(r'^(-\s+)')
+reOL           = re.compile(r'^(\d+)\.\s+')
+reTL           = re.compile(r'^-\s+\[(x|-| )\]\s+')
+reRL           = re.compile(r'^\[(\w+)\]\:\s+')
+reForceCode    = re.compile(r'`{2}')
+reCode         = re.compile(r'`{3}\s*(?P<lang>\w*)?$')
+reCodeClose    = re.compile(r'`{3}')
+reDetail       = re.compile(r'\({2}\s*(?P<summary>.+)?$')
+reDetailClose  = re.compile(r'\){2}')
+reStyle        = re.compile(r'(!{2}|\|{2}|\*{1,2}|={1,2}|_{1,2}|~{2}|\'{2}|`|\^)')
+reWikilink     = re.compile(r'(?P<img>(\!|\?))?\[{2}(?P<data>(.+))\]{2}')
+reContentLink  = re.compile(r'\]\s*\(((.+))\)')
+reExt          = re.compile(r'(?P<protocol>\w+)\:\/\/(?P<path>.+)')
+reEmail        = re.compile(r'(?P<name>.+)@(?P<url>\w+(\.\w+))+')
+reLink         = re.compile(r'(https?\:\/\/)?(?P<url>((\S+\.\S+)+\/*))')
+reGrids        = re.compile(r'{{\s*(?P<title>.+)?')
+reGridsClose   = re.compile(r'}}')
+reGridCel      = re.compile(r'<{\s*(?P<title>.+)?')
+reGridCelClose = re.compile(r'}>')
+reLaTeX        = re.compile(r'\${2}\s*(?P<title>.+)?')
+# reList         = re.compile(r'((?P<ol>(\d+)\.\s+)|(?P<tl>-\s+\[(x|-| )\]\s+)|(?P<ul>(-\s+))|(?P<rl>\[(\w+)\]\:\s+))')
 
 """_defStyleR = [
 	'dragonik',
@@ -121,12 +148,7 @@ _htmlDocPart3 = """
 
 # def strmatch(txt, pos, target): return txt[pos:][:len(target)] == target
 
-def AddStyle(name: str, styles: dict) -> str:
-	styles[name] ^= 1
 
-	#ls[-1] += f"<{'/' * styles[style]}{style}>"
-
-	return f"<{'/' * (not styles[name])}{name}>"
 def GetValid(data) -> str:
 	head = 0
 
@@ -224,7 +246,8 @@ def LsStart(index, tabs, param=None) -> str:
 		return ''
 # TODO: add params
 def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
-	html  = f'{_tab * (tabs+1)}</li>{_ln}'
+	html = f'{_tab * (tabs+1)}</li>{_ln}'
+	nls  = False
 
 	global lsbr
 
@@ -241,20 +264,21 @@ def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
 			last = ls[-1]
 			ls.append([type, tabs])
 			html += LsStart(type, tabs, param)
+			nls = True
 		elif ls[-1][0] != type:
 			p     = ls.pop(-1)
 			html  = LsEnding(p[0])
 			ls.append([type, tabs])
 			html += LsStart(type, tabs, param)
+			nls = True
 	else: # empty list, WTF?
 		ls.append([type, tabs])
 		html = LsStart(type, tabs, param)
 
-	# TODO: task list with a new function
-	# global value for each label
-	# lol no  # function `AddTLTag()`
 
-	if type == 2 and param != None:
+	if type == 1 and param != None and nls:
+		return html + f"<li value='{param}'>{_ln}{_tab * (tabs+1)}"
+	elif type == 2 and param != None:
 		global _taskcnt
 		_taskcnt += 1
 		state     = ''
@@ -272,28 +296,54 @@ def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
 		return html + f"{_tab * (tabs+1)}<li>" \
 			f"{_ln}{_tab * (tabs+1)}"
 
+# - [x] youtube
+# - [ ] twitch
+# - [ ] steam
+# - [ ] twitter
+# - [x] reddit
+# - [ ] spotify
+# - [ ] deezer
+# - [ ] github
+# - [ ] wikipedia
+# - [ ] discord
+# - [ ] google
+# - [ ] gdrive
+# - [ ] dropbox
+# - [ ] gmail
+# - [ ] megacloud
+# * It would be better to be able to directly copy the link of the video.
+# * Most people don't just copy one lil bit of the URL.
+# * Maybe not the share feature, although it could be done...
+def AddLink(title: str, lnk: str, params: dict, img: None | str) -> str:
+	m        = reExt.match(lnk)
+	protocol = m.group('protocol')
+	path     = m.group('path')
 
-# \ **value**
-# [0]: none
-# [1]: wikilink
-# [2]: basic
-# [3]: image-wikilinks
-# [4]: preview
-# [5]: image
-# [6]: next argument, for basic links
-# [7]: next-arg, second flag
-# TODO: preview
-def LinkAddSingle(lnk, type) -> str:
-	match type:
-		case 1: return f"<a href='{lnk}' class='wikilink'>{lnk}</a>"
-		case 3: return f"<img src='{lnk}' alt='{lnk}' class='wikilink-image'>"
-		case 4: return f"<a href='{lnk}' class='wikilink'>{lnk}</a>"
+	if img == None: return f"<a href='{lnk}'>{title}</a>"
+	elif img == '!':  return f"""<img src='{lnk}' alt='{title}' \
+		height='{params['height']}' width='{params['width']}' \
+		class='mr-link default-img {params['put']}'>"""
+	elif img == '?':  return f"""<iframe src='{lnk}' title='{title}' \
+		height='{params['height']}' width='{params['width']}' \
+		class='mr-link default-prev {params['put']}'></iframe>"""
 
 	return ''
-# TODO: do type 5
-def LinkAddDouble(lnk, title, type) -> str:
-	return f"<a href='{lnk}' class='md-link'>{title}</a>"
+def LinkParseArgs(src) -> dict:
+	params = {'width': '', 'height': '', 'put': ''}
 
+	for p in src:
+		if (x := re.match(r'((?P<pos>height|width)=)?(?P<value>\d+)', p)):
+			if (pos := x.group('pos')):
+				if not params[pos]:  params[pos]      = x.group('value')
+			elif not params['height']: params['height'] = x.group('value')
+			elif not params['width']:  params['width']  = x.group('value')
+		elif (z := re.match(r'put\-(left|right|center)', p)) and not params['put']:
+			params['put'] = 'put-' + z.group(1)
+
+	if not params['height']: params['height'] = 315
+	if not params['width']:  params['width']  = 560
+
+	return params
 
 def Parse(input):
 	file = open(input)
@@ -312,17 +362,14 @@ def Parse(input):
 	# toggle it's paired-value in the dictionary, making it ``True``;
 	# when true, the ``ParseStyle`` function should return an ending
 	# HTML tag [...] and set the value back to false.
-	styles = {
-		'em'     : False,
-		'strong' : False,
-		'ins'    : False,
-		'strike' : False,
-		'code'   : False,
-		'mark'   : False,
-		'sup'    : False,
-		'sub'    : False,
-		'half'   : False,
-		'q'      : False
+	style = {
+		'*':  [False, '<em>',   '</em>'],   '**': [False, '<strong>', '</strong>'],
+		'_':  [False, '<sub>',  '</sub>'],  '__': [False, '<ins>',    '</ins>'],
+		'==': [False, '<mark>', '</mark>'], '^':  [False, '<sup>',    '</sup>'],
+		"''": [False, '<q>',    '</q>'],    '~~': [False, '<strike>', '</strike>'],
+		'`':  [False, '<code>', '</code>'], '!!': [False, "<span class='high'>", '</span>'],
+		'||': [False, "<span class='blur'>", '</span>'],
+		'=':  [False, "<span class='half'>", '</span>']
 	}
 
 	global lsbr
@@ -339,7 +386,7 @@ def Parse(input):
 
 	paragrph = 0
 	allows1  = True # allow lists, blockquotes, headings, separators to be written.
-	               # False when text is encountered
+	                # False when text is encountered
 	lnktitle = ''
 	lnkttpos = None
 	lnktype  = 0
@@ -377,113 +424,81 @@ def Parse(input):
 					break
 
 				# * black magic involving lists
-				if len(data) <= 1 and len(lists) and not codeb:
-					lsbr += 1
+				if len(data) <= 1 and len(lists) and not codeb: lsbr += 1
 
 				# * Code block
-				if   data[i:i+3] == '```':
-					if codeb == None:
-						codeb = GetValid(data[i:].strip())
-						if codeb == None or not len(codeb):
-							codeb = 'txt'
-						i += len(codeb)
-						if html[-6:-2] != '</p>' or html[-6:-2] != '<br>':
-							html += '<br>'
+				if (m := reCode.match(data[i:])) != None and codeb == None:
+					codeb = m.group('lang') if m.groups else 'txt'
 
-						from codeparser import CodeParser
+					if html[-6:-2] != '</p>' or html[-6:-2] != '<br>': html += '<br>'
 
-						# TODO: Parser
-						html += f"<pre class='codeblock' data-lang='{codeb}'>"
+					# TODO: Parser
 
-						allows1 = False
-					else:
-						codeb    = None
-						allows1  = False
-						html += "</pre> <!-- end of codeblock --> <br>"
-					i += 3
-				elif data[i:i+2] == '``':
+					html   += f"<pre class='codeblock' data-lang='{codeb}'>"
+					allows1 = False
+					i      += len(m.group(0))
+				elif (m := reCodeClose.match(data[i:])) != None and codeb != None:
+					allows1 = False
+					html   += '</pre>'
+					codeb   = None
+					i      += 3
+				elif (m := reForceCode.match(data[i:])) != None and codeb == None:
 					code     ^= 1
 					html += '<' + ('/'*(not code)) + 'code>'
 					i        += 2
 					allows1   = False
 
-				# ! Should blockquotes really be paragraph inhibiter?
 				# * Blockquotes
-				if not code and not codeb:
-					if   data[i:][:2] == '<<':
-						html += '<blockquote>\n'
-						i        += 2
-						quote    += 1
-					elif data[i:][:2] == '>>' and quote:
+				if not code and not codeb and data[i:i+2] == '<<':
+					html += '<blockquote>\n'
+					i        += 2
+					quote    += 1
+				elif not code and not codeb and quote and data[i:i+2] == '<<':
 						quote    -= 1
 						html += '\n</blockquote>\n'
 						i        += 2
 
-				# * Ref-lists
-				if not code and not codeb and allows1:
-					# .{1}
-					rl = IsRL(data[i:])
-					if rl[0]:
-						html += LsAddHeader(lists, 3, tabs, rl[2])
-						newls = True
-						i += rl[1]
-
 				# * Detail section
-				if not code and not codeb:
-					if data[i:i+2] == '((':
-						detail   += 1
-						html += '<details>'
-						i        += 2
-						summary   = data[i+1:]
-						if summary:
-							html += f'<summary>{summary}</summary>'
-							i        += len(summary)
-					if detail and data[i:i+2] == '))':
-						detail   -= 1
-						html += '</details>'
-						i        += 2
+				if not code and not codeb and (m := reDetail.match(data[i:])):
+					detail += 1
+					html   += '<details>'
+					if m.groups: html += f'<summary>{m.group(1)}</summary>'
+					i += len(m.group(0))
+				if not code and not codeb and detail and (m := reDetailClose.match(data[i:])):
+					detail -= 1
+					html   += '</details>'
+					i      += len(m.group(0))
 
 				# * Lists, on new index per line
-				# TODO: lists parameters
-				if not code and not codeb and allows1:
-					f  = False # first
-					ol = IsOL(data[i:])
-					ul = IsUL(data[i:])
-					tl = IsTL(data[i:])
-
-					if   tl != -1:
-						html += LsAddHeader(lists, 2, tabs, tl)
-						newls = True
-						i    += 5
-					elif ul:
-						html += LsAddHeader(lists, 0, tabs)
-						newls = True
-						i    += 1
-					elif ol[0]:
-						html += LsAddHeader(lists, 1, tabs, ol[2])
-						newls = True
-						i    += ol[1]
+				if not code and not codeb and allows1 and (m := reTL.match(data[i:])) != None:
+					html += LsAddHeader(lists, 2, tabs, ' -x'.index(m.group(1)))
+					newls = True
+					i    += len(m.group(0))
+				if not code and not codeb and allows1 and (m := reUL.match(data[i:])) != None:
+					html += LsAddHeader(lists, 0, tabs)
+					newls = True
+					i    += len(m.group(0))
+				if not code and not codeb and allows1 and (m := reOL.match(data[i:])) != None:
+					html += LsAddHeader(lists, 1, tabs, int(m.group(1)))
+					newls = True
+					i    += len(m.group(0))
+				if not code and not codeb and allows1 and (m := reRL.match(data[i:])) != None:
+					html += LsAddHeader(lists, 3, tabs, m.group(1))
+					newls = True
+					i    += len(m.group(0))
 
 				# * Heading, one per line
-				if not code and not codeb and allows1:
-					if data[i] == '#' and data[i+1] in ' \t\r.#':
-						head = data[i:].split(' ', 1)[0]
-
-						if   head == '#.':     head = 'hsmall'; i += 3
-						elif head == '#':      head = 'h1';     i += 2
-						elif head == '##':     head = 'h2';     i += 3
-						elif head == '###':    head = 'h3';     i += 4
-						elif head == '####':   head = 'h4';     i += 5
-						elif head == '#####':  head = 'h5';     i += 6
-						elif head == '######': head = 'h6';     i += 7
-						else: head = ''
-
-						if head:
-							html += f'<{head}>'
-
-						allows1 = False
-
-
+				if not code and not codeb and allows1 and (m := reHead.match(data[i:])) != None:
+					match m.group(1):
+						case '#.':     html += "<span class='hsmall'>"; head = '</span>'
+						case '#':      html += '<h1>'; head = '</h1>'
+						case '##':     html += '<h2>'; head = '</h2>'
+						case '###':    html += '<h3>'; head = '</h3>'
+						case '####':   html += '<h4>'; head = '</h4>'
+						case '#####':  html += '<h5>'; head = '</h5>'
+						case '######': html += '<h6>'; head = '</h6>'
+					allows1 = False
+					i += len(m.group(0))
 
 				# * Paragraphs
 				if  (len(data) > 1 and
@@ -498,85 +513,53 @@ def Parse(input):
 				# * Inline HTML styling
 
 				# * Content
-				# TODO: work images for width/length, etc
-				# TODO: work the add-ons (youtube:// twitch:// steam:// github://)
 				# TODO: perhaps `Parse` needs to be redone to accept single
-				# TODO: strings in order to parse extracted strings from `[]`
-				if not code and not codeb:
-					# 1. Managing the style inside.
-					# --
-					# \ **value**
-					# [0]: none
-					# [1]: wikilink
-					# [2]: basic
-					# [3]: image-wikilinks
-					# [4]: preview
-					# [5]: image
-					# [6]: next argument, for basic links
-					# [7]: next-arg, second flag
-					if links == 0 and data[i:i+3] == '![[':
-						src       = data[i+3:data.find(']]')]
-						html += LinkAddSingle(src, 3)
-						i        += len(src) + 5
-					if links == 0 and data[i:i+3] == '?[[':
-						src       = data[i+3:data.find(']]')]
-						html += LinkAddSingle(src, 4)
-						i        += len(src) + 5
-					if links == 0 and data[i:i+2] == '[[':
-						src       = data[i+2:data.find(']]')]
-						html += LinkAddSingle(src, 1)
-						i        += len(src) + 4
+				# 1. Managing the style inside.
+				# --
+				# \ **value**
+				# [0]: none
+				# [1]: wikilink           [[  ]]
+				# [2]: basic              [ ]( )
+				# [3]: image-wikilinks   ![[  ]]
+				# [4]: preview           ?[[  ]]
+				# [5]: image             ![ ]( )
+				# [6]: next argument, for basic links
+				# [7]: next-arg, second flag
+				if not code and not codeb and links == 0 and (m := reWikilink.match(data[i:])) != None:
+					src   = m.group('data').replace('\t', ' ').split(' ')
+					img   = m.group('img')
+					html += AddLink(src[0], src[0], LinkParseArgs(src[1:]), img)
+					i    += len(m.group(0))
 
-					if links == 0 and data[i] == '[' and lnkttpos == None:
-						links    = 2
-						lnktype  = 2
-						lnkttpos = len(html)
-						i       += 1
-					if links == 0 and data[i:i+2] == '![' and lnkttpos == None:
-						links    = 2
-						lnktype  = 5
-						lnkttpos = len(html)
-						i       += 1
+				if not code and not codeb and links == 0 and data[i:i+1] == '[' and lnkttpos == None:
+					links    = 1
+					lnkttpos = len(html)
+					i       += 1
+				if not code and not codeb and links == 0 and data[i:i+2] == '![' and lnkttpos == None:
+					links    = 2
+					lnkttpos = len(html)
+					i       += 1
 
-					if links == 2 and data[i:i+2] == '](' and lnkttpos != None:
-						links     = 6
-						lnktitle  = html[lnkttpos:]
-						html      = html[:lnkttpos]
-						lnkttpos  = None
-						src       = data[i+1:data.find(')')]
-						links     = 0
-						i        += 1 + len(src) + 1
-						html += LinkAddDouble(src, lnktitle, lnktype)
-
+				if not code and not codeb and links and (m := reContentLink.match(data[i:])) != None and lnkttpos != None:
+					lnktitle = html[lnkttpos:]
+					html     = html[:lnkttpos]
+					lnkttpos = None
+					src      = m.group(1).replace('\t', ' ').split(' ')
+					html    += AddLink(lnktitle, src[0], LinkParseArgs(src[1:]), [None,'!','?'][links-1])
+					i       += len(m.group(0))
 
 				# * Tags
-				if not code and not codeb and data[i] == '#':
-					# (data[i+1] == ',' or not data[i+1] in _reserved)
-					tag = GetValid(data[i+1:])
-					ret = ('#' + tag) if data[i+1] != ',' else ''
-
-					if data[i+1] == ',':
-						ret == ''
-
-					html += f"<span id='{tag}'>{ret}</span>"
-
-					i += len(ret)
+				if not code and not codeb and (m := reTag.match(data[i:])) != None:
+					tag   = m.group('tag')
+					html += f"<span id='{tag}'>{f'#{tag}' if m.group(1) == ',' else ''}</span>"
+					i    += len(m.group(0))
 					allows1 = False
 
 				# * Styles
-				if not code and not codeb and data[i] in "`~^*_='":
-					if   data[i:i+2] == '**':  html += AddStyle('strong', styles); i += 2; continue
-					elif data[i:i+2] == '==':  html += AddStyle('mark',   styles); i += 2; continue
-					elif data[i:i+2] == '__':  html += AddStyle('ins',    styles); i += 2; continue
-					elif data[i:i+2] == '~~':  html += AddStyle('strike', styles); i += 2; continue
-					elif data[i:i+2] == "''":  html += AddStyle('q',      styles); i += 2; continue
-					elif data[i]     == '*':   html += AddStyle('em',     styles); i += 1; continue
-					elif data[i]     == '=':   html += AddStyle('half',   styles); i += 1; continue
-					elif data[i]     == '_':   html += AddStyle('sub',    styles); i += 1; continue
-					elif data[i]     == '`':   html += AddStyle('code',   styles); i += 1; continue
-					elif data[i]     == '^':   html += AddStyle('sup',    styles); i += 1; continue
-
-
+				if not codeb and not code and (m := reStyle.match(data[i:])) != None:
+					html += style[m.group(1)][1 + style[m.group(1)][0]]
+					style[m.group(1)][0] ^= 1
+					i    += len(m.group(1))
 					allows1 = False
 
 				# * Miscellaneous ('--', '...')
@@ -605,7 +588,7 @@ def Parse(input):
 			pass
 
 		if head:
-			html += f'</{head}>'
+			html += head
 			head  = ''
 
 		allows1  = True
@@ -691,7 +674,7 @@ def AddStylesheet(name: str, bundle: bool) -> str:
 def main(args):
 	info = {
 		'input':           '',
-		'output':          'Output.mr',
+		'output':          'Output.html',
 		'noOutput':        True,
 		'format':          0, # 0: HTML, 1: PDF, 2: SVG, 3: PNG, 4: EPUB
 		'stylesheet':      [],
