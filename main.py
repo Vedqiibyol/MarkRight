@@ -5,7 +5,7 @@ _tab       = '\t' # FEKKIN F-STRING RULEZ!!!
 _ln        = '\n'
 
 _theme     = 'dark' # light | dark
-_dis`p      = 'grid' # grid  | list
+_disp      = 'grid' # grid  | list
 
 _cnBold    = '\x1B[1m'
 _cnHlfb    = '\x1B[2m'
@@ -49,7 +49,6 @@ reDetailClose  = re.compile(r'\){2}')
 reStyle        = re.compile(r'(!{2}|\|{2}|\*{1,2}|={1,2}|_{1,2}|~{2}|\'{2}|`|\^)')
 reWikilink     = re.compile(r'(?P<img>(\!|\?))?\[{2}(?P<data>(.+))\]{2}')
 reContentLink  = re.compile(r'\]\s*\(((.+))\)')
-reExt          = re.compile(r'(?P<protocol>\w+)\:\/\/(?P<path>.+)')
 reEmail        = re.compile(r'(?P<name>.+)@(?P<url>\w+(\.\w+))+')
 reLink         = re.compile(r'(https?\:\/\/)?(?P<url>((\S+\.\S+)+\/*))')
 reGrids        = re.compile(r'{{\s*(?P<title>.+)?')
@@ -186,66 +185,31 @@ def StripWhiteSpaces(data) -> tuple[str, int, int, int]:
 	return (data, tab, space, after-len(data))
 
 
-def IsTL(data) -> int:
-	if data[:2] == '- ' or data[:2] == '-\t':
-		if data[2:5] == '[ ]': return 0
-		if data[2:5] == '[-]': return 1
-		if data[2:5] == '[x]': return 2
-	return -1
-def IsUL(data) -> bool:
-	return data[:2] == '- ' or data[:2] == '-\t'
-# TODO: add starting
-def IsOL(data) -> tuple[bool, int, int]:
-	cnt = 0
-	num = ''
-	end = data.find('.')
-
-	if end != -1:
-		num = data[:end]
-		for i in num:
-			if i in _reserved or not i.isdigit(): return [False, -1, None]
-			cnt += 1
-		if cnt:
-			return [True, cnt+1, int(num)]
-
-	return [False, -1, None]
-def IsRL(data) -> tuple[bool, int, str]:
-	cnt = 0
-	txt = ''
-	end = data.find(']:')
-
-	if data[0] == '[' and end != -1:
-		txt = data[1:end]
-		for i in txt:
-			if i in _reserved: return [False, -1, None]
-			cnt += 1
-		return [True, cnt + 3, txt]
-
-	return [False, -1, None]
-
 def LsEnding(index, tabs=0) -> str:
 	tabh = tabs
 	tabe = tabs + 1
 
 	try:
-		return [
-			f"{_tab * tabe}</li>\n{_tab * tabh}</ul>\n",
-			f"{_tab * tabe}</li>\n{_tab * tabh}</ol>\n",
-			f"{_tab * tabe}</li>\n{_tab * tabh}</ul>\n",
-			f"{_tab * tabe}</li>\n{_tab * tabh}</ol>\n"][index]
+		return {
+			'ul': f"{_tab * tabe}</li>\n{_tab * tabh}</ul>\n",
+			'ol': f"{_tab * tabe}</li>\n{_tab * tabh}</ol>\n",
+			'tl': f"{_tab * tabe}</li>\n{_tab * tabh}</ul>\n",
+			'rl': f"{_tab * tabe}</li>\n{_tab * tabh}</ul>\n"}[index]
 	except IndexError:
 		return ''
 def LsStart(index, tabs, param=None) -> str:
 	try:
-		return [
-			_ln + f"{_tab * tabs}<ul>" + _ln,
-			_ln + f"{_tab * tabs}<ol>" + _ln,
-			_ln + f"{_tab * tabs}<ul class='task-list'>" + _ln,
-			_ln + f"{_tab * tabs}<ul class='ref-list'>" + _ln][index]
+		return {
+			'ul': _ln + f"{_tab * tabs}<ul>" + _ln,
+			'ol': _ln + f"{_tab * tabs}<ol>" + _ln,
+			'tl': _ln + f"{_tab * tabs}<ul class='task-list'>" + _ln,
+			'rl': _ln + f"{_tab * tabs}<ul class='ref-list'>" + _ln}[index]
 	except IndexError:
 		return ''
 # TODO: add params
 def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
+	tabs += 1
+
 	html = f'{_tab * (tabs+1)}</li>{_ln}'
 	nls  = False
 
@@ -276,9 +240,9 @@ def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
 		html = LsStart(type, tabs, param)
 
 
-	if type == 1 and param != None and nls:
+	if type == 'ol' and param != None and nls:
 		return html + f"<li value='{param}'>{_ln}{_tab * (tabs+1)}"
-	elif type == 2 and param != None:
+	elif type == 'tl' and param != None:
 		global _taskcnt
 		_taskcnt += 1
 		state     = ''
@@ -290,17 +254,18 @@ def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
 		return html + f"{_tab * (tabs+1)}<li>" \
 			f"<input type='checkbox' data-state='{state}' name='__MR_TASK_{_taskcnt}'>" \
 			f"{_ln}{_tab * (tabs+1)}"
-	elif type == 3 and param != None:
+	elif type == 'rl' and param != None:
 		return html + f"{_tab * (tabs+1)}<li class='ref' id='{param}' data-name='{param}'>"
 	else:
 		return html + f"{_tab * (tabs+1)}<li>" \
 			f"{_ln}{_tab * (tabs+1)}"
 
-# - [x] youtube
-# - [ ] twitch
+# - [-] youtube.com -- channels and social
+# - [-] youtu.be    -- same
+# - [x] twitch
 # - [ ] steam
-# - [ ] twitter
-# - [x] reddit
+# - [ ] twitter     -- iframe of script
+# - [-] reddit      -- r/x
 # - [ ] spotify
 # - [ ] deezer
 # - [ ] github
@@ -315,12 +280,51 @@ def LsAddHeader(ls: list, type: int, tabs: int, param=None) -> str:
 # * Most people don't just copy one lil bit of the URL.
 # * Maybe not the share feature, although it could be done...
 def AddLink(title: str, lnk: str, params: dict, img: None | str) -> str:
-	m        = reExt.match(lnk)
-	protocol = m.group('protocol')
-	path     = m.group('path')
-
 	if img == None: return f"<a href='{lnk}'>{title}</a>"
-	elif img == '!':  return f"""<img src='{lnk}' alt='{title}' \
+	elif img == '!':
+		if (m := re.match(r'(https?\:\/\/)?(www\.)?(?P<app>\w+\.\w+)\/(?P<path>.+)', lnk)):
+			if m.group('app') == 'youtube.com':
+				ret = m.group('path')
+				if (z := re.match(r'(?P<t>watch\?v=|playlist\?list=)(?P<id>.+)\/', m.group('path'))):
+					match z.group('t'):
+						case 'watch?v=':       ret = z.group('id')
+						case 'playlist?list=': ret = f"videoseries?list={z.group('id')}"
+
+				return f"""<iframe width="{params['width']}" height="{params['height']}" \
+				src="https://www.youtube.com/embed/{ret}" \
+				title="{title if title else 'YouTube video player'}" \
+				frameborder="0" allow="accelerometer; autoplay; \
+				clipboard-write; encrypted-media; gyroscope; \
+				picture-in-picture" allowfullscreen \
+				class="mr-app mr-youtube {params['put']}"></iframe>"""
+			elif m.group('app') == 'youtu.be':
+				return f"""<iframe width="{params['width']}" height="{params['height']}" \
+				src="https://www.youtube.com/embed/{path}" \
+				title="{title if title else 'YouTube video player'}" \
+				frameborder="0" allow="accelerometer; autoplay; \
+				clipboard-write; encrypted-media; gyroscope; \
+				picture-in-picture" allowfullscreen \
+				class="mr-app mr-youtube {params['put']}"></iframe>"""
+			elif m.group('app') == 'twitch.tv':
+				# https://www.twitch.tv/bobross
+				z = re.match(r'(?P<channel>.+|video)(\/(?P<video>.+))?', m.group('path'))
+
+				ret  = ('channel' if z.group('channel') != 'video' else 'video')
+				ret += '=' + z.group(ret)
+
+				return f"""<iframe height="{params['height']}" width="{params['width']}" \
+				src="https://player.twitch.tv/?{ret}&parent=www.example.com" \
+				frameborder="0" allowfullscreen="true" scrolling="no" \
+				class="mr-app mr-twitch {params['put']}"></iframe>"""
+			elif m.group('app') == 'reddit.com':
+				# https://www.reddit.com/r/gaming/comments/zuwyxh/kids_now_a_days_will_never_know_the_pain_of/?utm_source=share&utm_medium=web2x&context=3
+				# https://www.reddit.com/r/gaming/comments/zuwyxh/kids_now_a_days_will_never_know_the_pain_of/
+				return f"""<iframe width="{params['width']}" height="{params['height']}"\
+				src="https://www.redditmedia.com/{m.group('path')}?ref_source=embed&amp;ref=share&amp;embed=true&amp;theme={_theme}" \
+				sandbox="allow-scripts allow-same-origin allow-popups" \
+				style="border: none;" scrolling="no"
+				class="mr-app mr-reddit {params['put']}"></iframe>"""
+		return f"""<img src='{lnk}' alt='{title}' \
 		height='{params['height']}' width='{params['width']}' \
 		class='mr-link default-img {params['put']}'>"""
 	elif img == '?':  return f"""<iframe src='{lnk}' title='{title}' \
@@ -339,6 +343,8 @@ def LinkParseArgs(src) -> dict:
 			elif not params['width']:  params['width']  = x.group('value')
 		elif (z := re.match(r'put\-(left|right|center)', p)) and not params['put']:
 			params['put'] = 'put-' + z.group(1)
+		elif (z := re.match(r'(?P<arg>)=(?P<value>.+)')):
+			params[z.group('arg')] = z.group('value')
 
 	if not params['height']: params['height'] = 315
 	if not params['width']:  params['width']  = 560
@@ -411,9 +417,13 @@ def Parse(input):
 					paragrph -= 1
 				elif not len(lists):
 					html += '<br>'
-			if len(lists) and tabs < lists[-1][1] and len(data) > 1:
-				if not (IsUL(data) or IsOL(data)[0] or IsTL(data) != -1 or IsRL(data)[0]):
-					for _ in range(lists[-1][1] - tabs+1):
+			if len(lists) and lists[-1][1] > tabs and len(data) > 1:
+				if not  (reUL.match(data)
+					or reOL.match(data)
+					or reTL.match(data)
+					or reRL.match(data)):
+					for _ in range(lists[-1][1] - tabs):
+					# while len(lists) or lists[-1][1] > tabs:
 						html += LsEnding(lists.pop(-1)[0])
 
 			while i < len(data): # ``while len(text)``
@@ -471,19 +481,19 @@ def Parse(input):
 
 				# * Lists, on new index per line
 				if not code and not codeb and allows1 and (m := reTL.match(data[i:])) != None:
-					html += LsAddHeader(lists, 2, tabs, ' -x'.index(m.group(1)))
+					html += LsAddHeader(lists, 'tl', tabs, ' -x'.index(m.group(1)))
 					newls = True
 					i    += len(m.group(0))
 				if not code and not codeb and allows1 and (m := reUL.match(data[i:])) != None:
-					html += LsAddHeader(lists, 0, tabs)
+					html += LsAddHeader(lists, 'ul', tabs)
 					newls = True
 					i    += len(m.group(0))
 				if not code and not codeb and allows1 and (m := reOL.match(data[i:])) != None:
-					html += LsAddHeader(lists, 1, tabs, int(m.group(1)))
+					html += LsAddHeader(lists, 'ol', tabs, int(m.group(1)))
 					newls = True
 					i    += len(m.group(0))
 				if not code and not codeb and allows1 and (m := reRL.match(data[i:])) != None:
-					html += LsAddHeader(lists, 3, tabs, m.group(1))
+					html += LsAddHeader(lists, 'rl', tabs, m.group(1))
 					newls = True
 					i    += len(m.group(0))
 
@@ -561,6 +571,7 @@ def Parse(input):
 					style[m.group(1)][0] ^= 1
 					i    += len(m.group(1))
 					allows1 = False
+					continue
 
 				# * Miscellaneous ('--', '...')
 				if not code and not codeb:
