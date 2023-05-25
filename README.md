@@ -5,8 +5,7 @@
 
 ***Well*** this was suppose to be a school project, turns out you need to be at
 least two. So oh well, imma finish this thingy here and then rewrite it in some
-other language like C for terminal and probably Dart or something because Python
-is a bit meh...
+other language like C...
 
 The goal of this little script is to write MarkDown document and convert them to
 HTML, you can also add CSS files to customize your document a bit, and you will
